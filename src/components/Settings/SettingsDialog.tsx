@@ -13,7 +13,7 @@ import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
 import { useToast } from "../../contexts/toast";
 
-type APIProvider = "openai" | "gemini" | "anthropic";
+type APIProvider = "openai" | "gemini" | "anthropic" | "local";
 
 type AIModel = {
   id: string;
@@ -28,6 +28,7 @@ type ModelCategory = {
   openaiModels: AIModel[];
   geminiModels: AIModel[];
   anthropicModels: AIModel[];
+  localModels: AIModel[];
 };
 
 // Define available models for each category
@@ -55,6 +56,11 @@ const modelCategories: ModelCategory[] = [
         description: "Best overall performance for problem extraction"
       },
       {
+        id: "gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
+        description: "Latest model with improved reasoning capabilities"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
         description: "Faster, more cost-effective option"
@@ -75,6 +81,28 @@ const modelCategories: ModelCategory[] = [
         id: "claude-3-opus-20240229",
         name: "Claude 3 Opus",
         description: "Top-level intelligence, fluency, and understanding"
+      }
+    ],
+    localModels: [
+      {
+        id: "llama3.2",
+        name: "Llama 3.2",
+        description: "Meta's latest open-source model"
+      },
+      {
+        id: "llama3.1",
+        name: "Llama 3.1",
+        description: "Previous Llama version"
+      },
+      {
+        id: "qwen2.5",
+        name: "Qwen 2.5",
+        description: "Alibaba's multilingual model"
+      },
+      {
+        id: "custom",
+        name: "Custom Model",
+        description: "Your own local model"
       }
     ]
   },
@@ -101,6 +129,11 @@ const modelCategories: ModelCategory[] = [
         description: "Strong overall performance for coding tasks"
       },
       {
+        id: "gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
+        description: "Latest model with improved reasoning capabilities"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
         description: "Faster, more cost-effective option"
@@ -121,6 +154,28 @@ const modelCategories: ModelCategory[] = [
         id: "claude-3-opus-20240229",
         name: "Claude 3 Opus",
         description: "Top-level intelligence, fluency, and understanding"
+      }
+    ],
+    localModels: [
+      {
+        id: "llama3.2",
+        name: "Llama 3.2",
+        description: "Meta's latest open-source model"
+      },
+      {
+        id: "llama3.1",
+        name: "Llama 3.1",
+        description: "Previous Llama version"
+      },
+      {
+        id: "qwen2.5",
+        name: "Qwen 2.5",
+        description: "Alibaba's multilingual model"
+      },
+      {
+        id: "custom",
+        name: "Custom Model",
+        description: "Your own local model"
       }
     ]
   },
@@ -147,6 +202,11 @@ const modelCategories: ModelCategory[] = [
         description: "Best for analyzing code and error messages"
       },
       {
+        id: "gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
+        description: "Latest model with improved reasoning capabilities"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
         description: "Faster, more cost-effective option"
@@ -167,6 +227,28 @@ const modelCategories: ModelCategory[] = [
         id: "claude-3-opus-20240229",
         name: "Claude 3 Opus",
         description: "Top-level intelligence, fluency, and understanding"
+      }
+    ],
+    localModels: [
+      {
+        id: "llama3.2",
+        name: "Llama 3.2",
+        description: "Meta's latest open-source model"
+      },
+      {
+        id: "llama3.1",
+        name: "Llama 3.1",
+        description: "Previous Llama version"
+      },
+      {
+        id: "qwen2.5",
+        name: "Qwen 2.5",
+        description: "Alibaba's multilingual model"
+      },
+      {
+        id: "custom",
+        name: "Custom Model",
+        description: "Your own local model"
       }
     ]
   }
@@ -202,7 +284,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
       onOpenChange(newOpen);
     }
   };
-  
+
   // Load current config on dialog open
   useEffect(() => {
     if (open) {
@@ -237,7 +319,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
   // Handle API provider change
   const handleProviderChange = (provider: APIProvider) => {
     setApiProvider(provider);
-    
+
     // Reset models to defaults when changing provider
     if (provider === "openai") {
       setExtractionModel("gpt-4o");
@@ -251,6 +333,10 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
       setExtractionModel("claude-3-7-sonnet-20250219");
       setSolutionModel("claude-3-7-sonnet-20250219");
       setDebuggingModel("claude-3-7-sonnet-20250219");
+    } else if (provider === "local") {
+      setExtractionModel("llama3.2");
+      setSolutionModel("llama3.2");
+      setDebuggingModel("llama3.2");
     }
   };
 
@@ -264,11 +350,11 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
         solutionModel,
         debuggingModel,
       });
-      
+
       if (result) {
         showToast("Success", "Settings saved successfully", "success");
         handleOpenChange(false);
-        
+
         // Force reload the app to apply the API key
         setTimeout(() => {
           window.location.reload();
@@ -295,7 +381,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="sm:max-w-md bg-black border border-white/10 text-white settings-dialog"
         style={{
           position: 'fixed',
@@ -314,7 +400,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
           animation: 'fadeIn 0.25s ease forwards',
           opacity: 0.98
         }}
-      >        
+      >
         <DialogHeader>
           <DialogTitle>API Settings</DialogTitle>
           <DialogDescription className="text-white/70">
@@ -327,18 +413,16 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
             <label className="text-sm font-medium text-white">API Provider</label>
             <div className="flex gap-2">
               <div
-                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${
-                  apiProvider === "openai"
-                    ? "bg-white/10 border border-white/20"
-                    : "bg-black/30 border border-white/5 hover:bg-white/5"
-                }`}
+                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${apiProvider === "openai"
+                  ? "bg-white/10 border border-white/20"
+                  : "bg-black/30 border border-white/5 hover:bg-white/5"
+                  }`}
                 onClick={() => handleProviderChange("openai")}
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-3 h-3 rounded-full ${
-                      apiProvider === "openai" ? "bg-white" : "bg-white/20"
-                    }`}
+                    className={`w-3 h-3 rounded-full ${apiProvider === "openai" ? "bg-white" : "bg-white/20"
+                      }`}
                   />
                   <div className="flex flex-col">
                     <p className="font-medium text-white text-sm">OpenAI</p>
@@ -347,38 +431,34 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                 </div>
               </div>
               <div
-                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${
-                  apiProvider === "gemini"
-                    ? "bg-white/10 border border-white/20"
-                    : "bg-black/30 border border-white/5 hover:bg-white/5"
-                }`}
+                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${apiProvider === "gemini"
+                  ? "bg-white/10 border border-white/20"
+                  : "bg-black/30 border border-white/5 hover:bg-white/5"
+                  }`}
                 onClick={() => handleProviderChange("gemini")}
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-3 h-3 rounded-full ${
-                      apiProvider === "gemini" ? "bg-white" : "bg-white/20"
-                    }`}
+                    className={`w-3 h-3 rounded-full ${apiProvider === "gemini" ? "bg-white" : "bg-white/20"
+                      }`}
                   />
                   <div className="flex flex-col">
                     <p className="font-medium text-white text-sm">Gemini</p>
-                    <p className="text-xs text-white/60">Gemini 1.5 models</p>
+                    <p className="text-xs text-white/60">Gemini 2.5 models</p>
                   </div>
                 </div>
               </div>
               <div
-                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${
-                  apiProvider === "anthropic"
-                    ? "bg-white/10 border border-white/20"
-                    : "bg-black/30 border border-white/5 hover:bg-white/5"
-                }`}
+                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${apiProvider === "anthropic"
+                  ? "bg-white/10 border border-white/20"
+                  : "bg-black/30 border border-white/5 hover:bg-white/5"
+                  }`}
                 onClick={() => handleProviderChange("anthropic")}
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-3 h-3 rounded-full ${
-                      apiProvider === "anthropic" ? "bg-white" : "bg-white/20"
-                    }`}
+                    className={`w-3 h-3 rounded-full ${apiProvider === "anthropic" ? "bg-white" : "bg-white/20"
+                      }`}
                   />
                   <div className="flex flex-col">
                     <p className="font-medium text-white text-sm">Claude</p>
@@ -387,13 +467,34 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                 </div>
               </div>
             </div>
+            <div className="flex gap-2 mt-2">
+              <div
+                className={`flex-1 p-2 rounded-lg cursor-pointer transition-colors ${apiProvider === "local"
+                  ? "bg-white/10 border border-white/20"
+                  : "bg-black/30 border border-white/5 hover:bg-white/5"
+                  }`}
+                onClick={() => handleProviderChange("local")}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-3 h-3 rounded-full ${apiProvider === "local" ? "bg-white" : "bg-white/20"
+                      }`}
+                  />
+                  <div className="flex flex-col">
+                    <p className="font-medium text-white text-sm">Local Models</p>
+                    <p className="text-xs text-white/60">Ollama, LM Studio, etc.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-white" htmlFor="apiKey">
-            {apiProvider === "openai" ? "OpenAI API Key" : 
-             apiProvider === "gemini" ? "Gemini API Key" : 
-             "Anthropic API Key"}
+              {apiProvider === "openai" ? "OpenAI API Key" :
+                apiProvider === "gemini" ? "Gemini API Key" :
+                  apiProvider === "anthropic" ? "Anthropic API Key" :
+                    "API Key (Optional)"}
             </label>
             <Input
               id="apiKey"
@@ -401,9 +502,10 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={
-                apiProvider === "openai" ? "sk-..." : 
-                apiProvider === "gemini" ? "Enter your Gemini API key" :
-                "sk-ant-..."
+                apiProvider === "openai" ? "sk-..." :
+                  apiProvider === "gemini" ? "Enter your Gemini API key" :
+                    apiProvider === "anthropic" ? "sk-ant-..." :
+                      "Optional - leave empty if not needed"
               }
               className="bg-black/50 border-white/10 text-white"
             />
@@ -413,142 +515,155 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
               </p>
             )}
             <p className="text-xs text-white/50">
-              Your API key is stored locally and never sent to any server except {apiProvider === "openai" ? "OpenAI" : "Google"}
+              {apiProvider === "local"
+                ? "Your local server endpoint will be used. API key is optional."
+                : `Your API key is stored locally and never sent to any server except ${apiProvider === "openai" ? "OpenAI" : apiProvider === "gemini" ? "Google" : "Anthropic"}`
+              }
             </p>
             <div className="mt-2 p-2 rounded-md bg-white/5 border border-white/10">
               <p className="text-xs text-white/80 mb-1">Don't have an API key?</p>
               {apiProvider === "openai" ? (
                 <>
-                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button 
-                    onClick={() => openExternalLink('https://platform.openai.com/signup')} 
+                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button
+                    onClick={() => openExternalLink('https://platform.openai.com/signup')}
                     className="text-blue-400 hover:underline cursor-pointer">OpenAI</button>
                   </p>
-                  <p className="text-xs text-white/60 mb-1">2. Go to <button 
-                    onClick={() => openExternalLink('https://platform.openai.com/api-keys')} 
+                  <p className="text-xs text-white/60 mb-1">2. Go to <button
+                    onClick={() => openExternalLink('https://platform.openai.com/api-keys')}
                     className="text-blue-400 hover:underline cursor-pointer">API Keys</button> section
                   </p>
                   <p className="text-xs text-white/60">3. Create a new secret key and paste it here</p>
                 </>
-              ) : apiProvider === "gemini" ?  (
+              ) : apiProvider === "gemini" ? (
                 <>
-                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button 
-                    onClick={() => openExternalLink('https://aistudio.google.com/')} 
+                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button
+                    onClick={() => openExternalLink('https://aistudio.google.com/')}
                     className="text-blue-400 hover:underline cursor-pointer">Google AI Studio</button>
                   </p>
-                  <p className="text-xs text-white/60 mb-1">2. Go to the <button 
-                    onClick={() => openExternalLink('https://aistudio.google.com/app/apikey')} 
+                  <p className="text-xs text-white/60 mb-1">2. Go to the <button
+                    onClick={() => openExternalLink('https://aistudio.google.com/app/apikey')}
+                    className="text-blue-400 hover:underline cursor-pointer">API Keys</button> section
+                  </p>
+                  <p className="text-xs text-white/60">3. Create a new API key and paste it here</p>
+                </>
+              ) : apiProvider === "anthropic" ? (
+                <>
+                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button
+                    onClick={() => openExternalLink('https://console.anthropic.com/signup')}
+                    className="text-blue-400 hover:underline cursor-pointer">Anthropic</button>
+                  </p>
+                  <p className="text-xs text-white/60 mb-1">2. Go to the <button
+                    onClick={() => openExternalLink('https://console.anthropic.com/settings/keys')}
                     className="text-blue-400 hover:underline cursor-pointer">API Keys</button> section
                   </p>
                   <p className="text-xs text-white/60">3. Create a new API key and paste it here</p>
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-white/60 mb-1">1. Create an account at <button 
-                    onClick={() => openExternalLink('https://console.anthropic.com/signup')} 
-                    className="text-blue-400 hover:underline cursor-pointer">Anthropic</button>
+                  <p className="text-xs text-white/60 mb-1">1. Install <button
+                    onClick={() => openExternalLink('https://ollama.ai/')}
+                    className="text-blue-400 hover:underline cursor-pointer">Ollama</button> or <button
+                      onClick={() => openExternalLink('https://lmstudio.ai/')}
+                      className="text-blue-400 hover:underline cursor-pointer">LM Studio</button>
                   </p>
-                  <p className="text-xs text-white/60 mb-1">2. Go to the <button 
-                    onClick={() => openExternalLink('https://console.anthropic.com/settings/keys')} 
-                    className="text-blue-400 hover:underline cursor-pointer">API Keys</button> section
-                  </p>
-                  <p className="text-xs text-white/60">3. Create a new API key and paste it here</p>
+                  <p className="text-xs text-white/60 mb-1">2. Start your local server (default: http://localhost:1234)</p>
+                  <p className="text-xs text-white/60">3. Pull a model (e.g., "ollama pull llama3.2")</p>
                 </>
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2 mt-4">
             <label className="text-sm font-medium text-white mb-2 block">Keyboard Shortcuts</label>
             <div className="bg-black/30 border border-white/10 rounded-lg p-3">
               <div className="grid grid-cols-2 gap-y-2 text-xs">
                 <div className="text-white/70">Toggle Visibility</div>
                 <div className="text-white/90 font-mono">Ctrl+B / Cmd+B</div>
-                
+
                 <div className="text-white/70">Take Screenshot</div>
                 <div className="text-white/90 font-mono">Ctrl+H / Cmd+H</div>
-                
+
                 <div className="text-white/70">Process Screenshots</div>
                 <div className="text-white/90 font-mono">Ctrl+Enter / Cmd+Enter</div>
-                
+
                 <div className="text-white/70">Delete Last Screenshot</div>
                 <div className="text-white/90 font-mono">Ctrl+L / Cmd+L</div>
-                
+
                 <div className="text-white/70">Reset View</div>
                 <div className="text-white/90 font-mono">Ctrl+R / Cmd+R</div>
-                
+
                 <div className="text-white/70">Quit Application</div>
                 <div className="text-white/90 font-mono">Ctrl+Q / Cmd+Q</div>
-                
+
                 <div className="text-white/70">Move Window</div>
                 <div className="text-white/90 font-mono">Ctrl+Arrow Keys</div>
-                
+
                 <div className="text-white/70">Decrease Opacity</div>
                 <div className="text-white/90 font-mono">Ctrl+[ / Cmd+[</div>
-                
+
                 <div className="text-white/70">Increase Opacity</div>
                 <div className="text-white/90 font-mono">Ctrl+] / Cmd+]</div>
-                
+
                 <div className="text-white/70">Zoom Out</div>
                 <div className="text-white/90 font-mono">Ctrl+- / Cmd+-</div>
-                
+
                 <div className="text-white/70">Reset Zoom</div>
                 <div className="text-white/90 font-mono">Ctrl+0 / Cmd+0</div>
-                
+
                 <div className="text-white/70">Zoom In</div>
                 <div className="text-white/90 font-mono">Ctrl+= / Cmd+=</div>
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-4 mt-4">
             <label className="text-sm font-medium text-white">AI Model Selection</label>
             <p className="text-xs text-white/60 -mt-3 mb-2">
               Select which models to use for each stage of the process
             </p>
-            
+
             {modelCategories.map((category) => {
               // Get the appropriate model list based on selected provider
-              const models = 
-                apiProvider === "openai" ? category.openaiModels : 
-                apiProvider === "gemini" ? category.geminiModels :
-                category.anthropicModels;
-              
+              const models =
+                apiProvider === "openai" ? category.openaiModels :
+                  apiProvider === "gemini" ? category.geminiModels :
+                    apiProvider === "anthropic" ? category.anthropicModels :
+                      category.localModels;
+
               return (
                 <div key={category.key} className="mb-4">
                   <label className="text-sm font-medium text-white mb-1 block">
                     {category.title}
                   </label>
                   <p className="text-xs text-white/60 mb-2">{category.description}</p>
-                  
+
                   <div className="space-y-2">
                     {models.map((m) => {
                       // Determine which state to use based on category key
-                      const currentValue = 
+                      const currentValue =
                         category.key === 'extractionModel' ? extractionModel :
-                        category.key === 'solutionModel' ? solutionModel :
-                        debuggingModel;
-                      
+                          category.key === 'solutionModel' ? solutionModel :
+                            debuggingModel;
+
                       // Determine which setter function to use
-                      const setValue = 
+                      const setValue =
                         category.key === 'extractionModel' ? setExtractionModel :
-                        category.key === 'solutionModel' ? setSolutionModel :
-                        setDebuggingModel;
-                        
+                          category.key === 'solutionModel' ? setSolutionModel :
+                            setDebuggingModel;
+
                       return (
                         <div
                           key={m.id}
-                          className={`p-2 rounded-lg cursor-pointer transition-colors ${
-                            currentValue === m.id
-                              ? "bg-white/10 border border-white/20"
-                              : "bg-black/30 border border-white/5 hover:bg-white/5"
-                          }`}
+                          className={`p-2 rounded-lg cursor-pointer transition-colors ${currentValue === m.id
+                            ? "bg-white/10 border border-white/20"
+                            : "bg-black/30 border border-white/5 hover:bg-white/5"
+                            }`}
                           onClick={() => setValue(m.id)}
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-3 h-3 rounded-full ${
-                                currentValue === m.id ? "bg-white" : "bg-white/20"
-                              }`}
+                              className={`w-3 h-3 rounded-full ${currentValue === m.id ? "bg-white" : "bg-white/20"
+                                }`}
                             />
                             <div>
                               <p className="font-medium text-white text-xs">{m.name}</p>
@@ -575,7 +690,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
           <Button
             className="px-4 py-3 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
             onClick={handleSave}
-            disabled={isLoading || !apiKey}
+            disabled={isLoading || (apiProvider !== "local" && !apiKey)}
           >
             {isLoading ? "Saving..." : "Save Settings"}
           </Button>

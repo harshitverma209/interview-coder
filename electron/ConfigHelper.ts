@@ -7,7 +7,8 @@ import { OpenAI } from "openai"
 
 interface Config {
   apiKey: string;
-  apiProvider: "openai" | "gemini" | "anthropic";  // Added provider selection
+  apiProvider: "openai" | "gemini" | "anthropic" | "local";  // Added local provider
+  baseURL?: string;  // For local model endpoints
   extractionModel: string;
   solutionModel: string;
   debuggingModel: string;
@@ -20,9 +21,10 @@ export class ConfigHelper extends EventEmitter {
   private defaultConfig: Config = {
     apiKey: "",
     apiProvider: "gemini", // Default to Gemini
-    extractionModel: "gemini-2.0-flash", // Default to Flash for faster responses
-    solutionModel: "gemini-2.0-flash",
-    debuggingModel: "gemini-2.0-flash",
+    baseURL: "http://localhost:1234", // Default Ollama URL
+    extractionModel: "gemini-2.5-flash", // Default to 2.5 Flash for improved reasoning
+    solutionModel: "gemini-2.5-flash",
+    debuggingModel: "gemini-2.5-flash",
     language: "python",
     opacity: 1.0
   };
@@ -37,7 +39,7 @@ export class ConfigHelper extends EventEmitter {
       console.warn('Could not access user data path, using fallback');
       this.configPath = path.join(process.cwd(), 'config.json');
     }
-    
+
     // Ensure the initial config file exists
     this.ensureConfigExists();
   }
@@ -58,7 +60,7 @@ export class ConfigHelper extends EventEmitter {
   /**
    * Validate and sanitize model selection to ensure only allowed models are used
    */
-  private sanitizeModelSelection(model: string, provider: "openai" | "gemini" | "anthropic"): string {
+  private sanitizeModelSelection(model: string, provider: "openai" | "gemini" | "anthropic" | "local"): string {
     if (provider === "openai") {
       // Only allow gpt-4o and gpt-4o-mini for OpenAI
       const allowedModels = ['gpt-4o', 'gpt-4o-mini'];
@@ -67,15 +69,15 @@ export class ConfigHelper extends EventEmitter {
         return 'gpt-4o';
       }
       return model;
-    } else if (provider === "gemini")  {
-      // Only allow gemini-1.5-pro and gemini-2.0-flash for Gemini
-      const allowedModels = ['gemini-1.5-pro', 'gemini-2.0-flash'];
+    } else if (provider === "gemini") {
+      // Only allow gemini-1.5-pro, gemini-2.0-flash, and gemini-2.5-flash for Gemini
+      const allowedModels = ['gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash'];
       if (!allowedModels.includes(model)) {
-        console.warn(`Invalid Gemini model specified: ${model}. Using default model: gemini-2.0-flash`);
-        return 'gemini-2.0-flash'; // Changed default to flash
+        console.warn(`Invalid Gemini model specified: ${model}. Using default model: gemini-2.5-flash`);
+        return 'gemini-2.5-flash'; // Changed default to 2.5 flash
       }
       return model;
-    }  else if (provider === "anthropic") {
+    } else if (provider === "anthropic") {
       // Only allow Claude models
       const allowedModels = ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'];
       if (!allowedModels.includes(model)) {
@@ -83,6 +85,9 @@ export class ConfigHelper extends EventEmitter {
         return 'claude-3-7-sonnet-20250219';
       }
       return model;
+    } else if (provider === "local") {
+      // For local models, allow any model name - user knows their local setup
+      return model || "llama3.2"; // Default to common local model
     }
     // Default fallback
     return model;
@@ -93,12 +98,12 @@ export class ConfigHelper extends EventEmitter {
       if (fs.existsSync(this.configPath)) {
         const configData = fs.readFileSync(this.configPath, 'utf8');
         const config = JSON.parse(configData);
-        
+
         // Ensure apiProvider is a valid value
-        if (config.apiProvider !== "openai" && config.apiProvider !== "gemini"  && config.apiProvider !== "anthropic") {
+        if (config.apiProvider !== "openai" && config.apiProvider !== "gemini" && config.apiProvider !== "anthropic" && config.apiProvider !== "local") {
           config.apiProvider = "gemini"; // Default to Gemini if invalid
         }
-        
+
         // Sanitize model selections to ensure only allowed models are used
         if (config.extractionModel) {
           config.extractionModel = this.sanitizeModelSelection(config.extractionModel, config.apiProvider);
@@ -109,13 +114,13 @@ export class ConfigHelper extends EventEmitter {
         if (config.debuggingModel) {
           config.debuggingModel = this.sanitizeModelSelection(config.debuggingModel, config.apiProvider);
         }
-        
+
         return {
           ...this.defaultConfig,
           ...config
         };
       }
-      
+
       // If no config exists, create a default one
       this.saveConfig(this.defaultConfig);
       return this.defaultConfig;
@@ -149,7 +154,7 @@ export class ConfigHelper extends EventEmitter {
     try {
       const currentConfig = this.loadConfig();
       let provider = updates.apiProvider || currentConfig.apiProvider;
-      
+
       // Auto-detect provider based on API key format if a new key is provided
       if (updates.apiKey && !updates.apiProvider) {
         // If API key starts with "sk-", it's likely an OpenAI key
@@ -163,11 +168,11 @@ export class ConfigHelper extends EventEmitter {
           provider = "gemini";
           console.log("Using Gemini API key format (default)");
         }
-        
+
         // Update the provider in the updates object
         updates.apiProvider = provider;
       }
-      
+
       // If provider is changing, reset models to the default for that provider
       if (updates.apiProvider && updates.apiProvider !== currentConfig.apiProvider) {
         if (updates.apiProvider === "openai") {
@@ -178,13 +183,17 @@ export class ConfigHelper extends EventEmitter {
           updates.extractionModel = "claude-3-7-sonnet-20250219";
           updates.solutionModel = "claude-3-7-sonnet-20250219";
           updates.debuggingModel = "claude-3-7-sonnet-20250219";
+        } else if (updates.apiProvider === "local") {
+          updates.extractionModel = "llama3.2";
+          updates.solutionModel = "llama3.2";
+          updates.debuggingModel = "llama3.2";
         } else {
-          updates.extractionModel = "gemini-2.0-flash";
-          updates.solutionModel = "gemini-2.0-flash";
-          updates.debuggingModel = "gemini-2.0-flash";
+          updates.extractionModel = "gemini-2.5-flash";
+          updates.solutionModel = "gemini-2.5-flash";
+          updates.debuggingModel = "gemini-2.5-flash";
         }
       }
-      
+
       // Sanitize model selections in the updates
       if (updates.extractionModel) {
         updates.extractionModel = this.sanitizeModelSelection(updates.extractionModel, provider);
@@ -195,18 +204,18 @@ export class ConfigHelper extends EventEmitter {
       if (updates.debuggingModel) {
         updates.debuggingModel = this.sanitizeModelSelection(updates.debuggingModel, provider);
       }
-      
+
       const newConfig = { ...currentConfig, ...updates };
       this.saveConfig(newConfig);
-      
+
       // Only emit update event for changes other than opacity
       // This prevents re-initializing the AI client when only opacity changes
-      if (updates.apiKey !== undefined || updates.apiProvider !== undefined || 
-          updates.extractionModel !== undefined || updates.solutionModel !== undefined || 
-          updates.debuggingModel !== undefined || updates.language !== undefined) {
+      if (updates.apiKey !== undefined || updates.apiProvider !== undefined ||
+        updates.extractionModel !== undefined || updates.solutionModel !== undefined ||
+        updates.debuggingModel !== undefined || updates.language !== undefined) {
         this.emit('config-updated', newConfig);
       }
-      
+
       return newConfig;
     } catch (error) {
       console.error('Error updating config:', error);
@@ -219,13 +228,20 @@ export class ConfigHelper extends EventEmitter {
    */
   public hasApiKey(): boolean {
     const config = this.loadConfig();
+
+    // For local models, API key is optional
+    if (config.apiProvider === "local") {
+      return true;
+    }
+
+    // For other providers, API key is required
     return !!config.apiKey && config.apiKey.trim().length > 0;
   }
-  
+
   /**
    * Validate the API key format
    */
-  public isValidApiKeyFormat(apiKey: string, provider?: "openai" | "gemini" | "anthropic" ): boolean {
+  public isValidApiKeyFormat(apiKey: string, provider?: "openai" | "gemini" | "anthropic" | "local"): boolean {
     // If provider is not specified, attempt to auto-detect
     if (!provider) {
       if (apiKey.trim().startsWith('sk-')) {
@@ -238,7 +254,7 @@ export class ConfigHelper extends EventEmitter {
         provider = "gemini";
       }
     }
-    
+
     if (provider === "openai") {
       // Basic format validation for OpenAI API keys
       return /^sk-[a-zA-Z0-9]{32,}$/.test(apiKey.trim());
@@ -248,11 +264,14 @@ export class ConfigHelper extends EventEmitter {
     } else if (provider === "anthropic") {
       // Basic format validation for Anthropic API keys
       return /^sk-ant-[a-zA-Z0-9]{32,}$/.test(apiKey.trim());
+    } else if (provider === "local") {
+      // For local models, any non-empty string is valid (or no key required)
+      return true; // Local models often don't require API keys
     }
-    
+
     return false;
   }
-  
+
   /**
    * Get the stored opacity value
    */
@@ -268,8 +287,8 @@ export class ConfigHelper extends EventEmitter {
     // Ensure opacity is between 0.1 and 1.0
     const validOpacity = Math.min(1.0, Math.max(0.1, opacity));
     this.updateConfig({ opacity: validOpacity });
-  }  
-  
+  }
+
   /**
    * Get the preferred programming language
    */
@@ -284,11 +303,11 @@ export class ConfigHelper extends EventEmitter {
   public setLanguage(language: string): void {
     this.updateConfig({ language });
   }
-  
+
   /**
    * Test API key with the selected provider
    */
-  public async testApiKey(apiKey: string, provider?: "openai" | "gemini" | "anthropic"): Promise<{valid: boolean, error?: string}> {
+  public async testApiKey(apiKey: string, provider?: "openai" | "gemini" | "anthropic" | "local"): Promise<{ valid: boolean, error?: string }> {
     // Auto-detect provider based on key format if not specified
     if (!provider) {
       if (apiKey.trim().startsWith('sk-')) {
@@ -304,22 +323,24 @@ export class ConfigHelper extends EventEmitter {
         console.log("Using Gemini API key format for testing (default)");
       }
     }
-    
+
     if (provider === "openai") {
       return this.testOpenAIKey(apiKey);
     } else if (provider === "gemini") {
       return this.testGeminiKey(apiKey);
     } else if (provider === "anthropic") {
       return this.testAnthropicKey(apiKey);
+    } else if (provider === "local") {
+      return this.testLocalKey(apiKey);
     }
-    
+
     return { valid: false, error: "Unknown API provider" };
   }
-  
+
   /**
    * Test OpenAI API key
    */
-  private async testOpenAIKey(apiKey: string): Promise<{valid: boolean, error?: string}> {
+  private async testOpenAIKey(apiKey: string): Promise<{ valid: boolean, error?: string }> {
     try {
       const openai = new OpenAI({ apiKey });
       // Make a simple API call to test the key
@@ -327,10 +348,10 @@ export class ConfigHelper extends EventEmitter {
       return { valid: true };
     } catch (error: any) {
       console.error('OpenAI API key test failed:', error);
-      
+
       // Determine the specific error type for better error messages
       let errorMessage = 'Unknown error validating OpenAI API key';
-      
+
       if (error.status === 401) {
         errorMessage = 'Invalid API key. Please check your OpenAI key and try again.';
       } else if (error.status === 429) {
@@ -340,16 +361,16 @@ export class ConfigHelper extends EventEmitter {
       } else if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
-      
+
       return { valid: false, error: errorMessage };
     }
   }
-  
+
   /**
    * Test Gemini API key
    * Note: This is a simplified implementation since we don't have the actual Gemini client
    */
-  private async testGeminiKey(apiKey: string): Promise<{valid: boolean, error?: string}> {
+  private async testGeminiKey(apiKey: string): Promise<{ valid: boolean, error?: string }> {
     try {
       // For now, we'll just do a basic check to ensure the key exists and has valid format
       // In production, you would connect to the Gemini API and validate the key
@@ -361,11 +382,11 @@ export class ConfigHelper extends EventEmitter {
     } catch (error: any) {
       console.error('Gemini API key test failed:', error);
       let errorMessage = 'Unknown error validating Gemini API key';
-      
+
       if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
-      
+
       return { valid: false, error: errorMessage };
     }
   }
@@ -374,7 +395,7 @@ export class ConfigHelper extends EventEmitter {
    * Test Anthropic API key
    * Note: This is a simplified implementation since we don't have the actual Anthropic client
    */
-  private async testAnthropicKey(apiKey: string): Promise<{valid: boolean, error?: string}> {
+  private async testAnthropicKey(apiKey: string): Promise<{ valid: boolean, error?: string }> {
     try {
       // For now, we'll just do a basic check to ensure the key exists and has valid format
       // In production, you would connect to the Anthropic API and validate the key
@@ -386,12 +407,46 @@ export class ConfigHelper extends EventEmitter {
     } catch (error: any) {
       console.error('Anthropic API key test failed:', error);
       let errorMessage = 'Unknown error validating Anthropic API key';
-      
+
       if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
-      
+
       return { valid: false, error: errorMessage };
+    }
+  }
+
+  /**
+   * Test Local API endpoint
+   */
+  private async testLocalKey(apiKey: string): Promise<{ valid: boolean, error?: string }> {
+    try {
+      // For local models, we can test the connection to the endpoint
+      const config = this.loadConfig();
+      const baseURL = config.baseURL || "http://localhost:1234";
+
+      // Try to connect to the local endpoint (Ollama example)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${baseURL}/api/version`, {
+        method: 'GET',
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        return { valid: true };
+      } else {
+        return { valid: false, error: `Local server not responding at ${baseURL}` };
+      }
+    } catch (error: any) {
+      console.error('Local API test failed:', error);
+      return {
+        valid: false,
+        error: `Cannot connect to local server. Make sure your local model server is running.`
+      };
     }
   }
 }

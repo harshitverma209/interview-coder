@@ -21,8 +21,54 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
   setLanguage
 }) => {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
+  const [currentModel, setCurrentModel] = useState<string>("")
+  const [apiProvider, setApiProvider] = useState<string>("")
   const tooltipRef = useRef<HTMLDivElement>(null)
   const { showToast } = useToast()
+
+  // Load current model configuration
+  useEffect(() => {
+    const loadModelConfig = async () => {
+      try {
+        const config = await window.electronAPI.getConfig()
+        if (config) {
+          setApiProvider(config.apiProvider || "")
+          // For display purposes, we'll show the solution model as it's the main one
+          setCurrentModel(config.solutionModel || "")
+        }
+      } catch (error) {
+        console.error("Failed to load model config:", error)
+      }
+    }
+    loadModelConfig()
+  }, [])
+
+  // Format model name for display
+  const formatModelName = (model: string, provider: string) => {
+    if (!model) return "No model"
+
+    // Handle custom models
+    if (model === "custom") {
+      return "Custom Model"
+    }
+
+    // Format known models
+    const modelMap: { [key: string]: string } = {
+      "gpt-4o": "GPT-4o",
+      "gpt-4o-mini": "GPT-4o Mini",
+      "gemini-1.5-pro": "Gemini 1.5 Pro",
+      "gemini-2.5-flash": "Gemini 2.5 Flash",
+      "gemini-2.0-flash": "Gemini 2.0 Flash",
+      "claude-3-7-sonnet-20250219": "Claude 3.7 Sonnet",
+      "claude-3-5-sonnet-20241022": "Claude 3.5 Sonnet",
+      "claude-3-opus-20240229": "Claude 3 Opus",
+      "llama3.2": "Llama 3.2",
+      "llama3.1": "Llama 3.1",
+      "qwen2.5": "Qwen 2.5"
+    }
+
+    return modelMap[model] || model
+  }
 
   // Extract the repeated language selection logic into a separate function
   const extractLanguagesAndUpdate = (direction?: 'next' | 'prev') => {
@@ -31,16 +77,16 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
     hiddenRenderContainer.style.position = 'absolute';
     hiddenRenderContainer.style.left = '-9999px';
     document.body.appendChild(hiddenRenderContainer);
-    
+
     // Create a root and render the LanguageSelector temporarily
     const root = createRoot(hiddenRenderContainer);
     root.render(
-      <LanguageSelector 
-        currentLanguage={currentLanguage} 
-        setLanguage={() => {}}
+      <LanguageSelector
+        currentLanguage={currentLanguage}
+        setLanguage={() => { }}
       />
     );
-    
+
     // Use a small delay to ensure the component has rendered
     // 50ms is generally enough for React to complete a render cycle
     setTimeout(() => {
@@ -49,11 +95,11 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
       if (selectElement) {
         const options = Array.from(selectElement.options);
         const values = options.map(opt => opt.value);
-        
+
         // Find current language index
         const currentIndex = values.indexOf(currentLanguage);
         let newIndex = currentIndex;
-        
+
         if (direction === 'prev') {
           // Go to previous language
           newIndex = (currentIndex - 1 + values.length) % values.length;
@@ -61,13 +107,13 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
           // Default to next language
           newIndex = (currentIndex + 1) % values.length;
         }
-        
+
         if (newIndex !== currentIndex) {
           setLanguage(values[newIndex]);
           window.electronAPI.updateConfig({ language: values[newIndex] });
         }
       }
-      
+
       // Clean up
       root.unmount();
       document.body.removeChild(hiddenRenderContainer);
@@ -87,14 +133,14 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
       // Clear any local storage or electron-specific data
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // Clear the API key in the configuration
       await window.electronAPI.updateConfig({
         apiKey: '',
       });
-      
+
       showToast('Success', 'Logged out successfully', 'success');
-      
+
       // Reload the app after a short delay
       setTimeout(() => {
         window.location.reload();
@@ -137,14 +183,14 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
               {screenshotCount === 0
                 ? "Take first screenshot"
                 : screenshotCount === 1
-                ? "Take second screenshot"
-                : screenshotCount === 2
-                ? "Take third screenshot"
-                : screenshotCount === 3
-                ? "Take fourth screenshot"
-                : screenshotCount === 4
-                ? "Take fifth screenshot"
-                : "Next will replace first screenshot"}
+                  ? "Take second screenshot"
+                  : screenshotCount === 2
+                    ? "Take third screenshot"
+                    : screenshotCount === 3
+                      ? "Take fourth screenshot"
+                      : screenshotCount === 4
+                        ? "Take fifth screenshot"
+                        : "Next will replace first screenshot"}
             </span>
             <div className="flex gap-1">
               <button className="bg-white/10 rounded-md px-1.5 py-1 text-[11px] leading-none text-white/70">
@@ -159,9 +205,8 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
           {/* Solve Command */}
           {screenshotCount > 0 && (
             <div
-              className={`flex flex-col cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${
-                credits <= 0 ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`flex flex-col cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${credits <= 0 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               onClick={async () => {
 
                 try {
@@ -323,11 +368,10 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
 
                       {/* Solve Command */}
                       <div
-                        className={`cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${
-                          screenshotCount > 0
-                            ? ""
-                            : "opacity-50 cursor-not-allowed"
-                        }`}
+                        className={`cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${screenshotCount > 0
+                          ? ""
+                          : "opacity-50 cursor-not-allowed"
+                          }`}
                         onClick={async () => {
                           if (screenshotCount === 0) return
 
@@ -375,17 +419,16 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                             : "Take a screenshot first to generate a solution."}
                         </p>
                       </div>
-                      
+
                       {/* Delete Last Screenshot Command */}
                       <div
-                        className={`cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${
-                          screenshotCount > 0
-                            ? ""
-                            : "opacity-50 cursor-not-allowed"
-                        }`}
+                        className={`cursor-pointer rounded px-2 py-1.5 hover:bg-white/10 transition-colors ${screenshotCount > 0
+                          ? ""
+                          : "opacity-50 cursor-not-allowed"
+                          }`}
                         onClick={async () => {
                           if (screenshotCount === 0) return
-                          
+
                           try {
                             const result = await window.electronAPI.deleteLastScreenshot()
                             if (!result.success) {
@@ -432,7 +475,7 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                     <div className="pt-3 mt-3 border-t border-white/10">
                       {/* Simplified Language Selector */}
                       <div className="mb-3 px-2">
-                        <div 
+                        <div
                           className="flex items-center justify-between cursor-pointer hover:bg-white/10 rounded px-2 py-1 transition-colors"
                           onClick={() => extractLanguagesAndUpdate('next')}
                           tabIndex={0}
@@ -449,17 +492,34 @@ const QueueCommands: React.FC<QueueCommandsProps> = ({
                             <span className="text-[11px] text-white/90">{currentLanguage}</span>
                             <div className="text-white/40 text-[8px]">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
-                                <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+                                <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
                               </svg>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* API Key Settings */}
+                      {/* Current Model Display */}
+                      <div className="mb-3 px-2">
+                        <div className="flex items-center justify-between px-2 py-1">
+                          <span className="text-[11px] text-white/70">Active Model</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-white/90">
+                              {formatModelName(currentModel, apiProvider)}
+                            </span>
+                            {apiProvider === "local" && (
+                              <span className="text-[9px] text-green-400/80 bg-green-400/10 px-1.5 py-0.5 rounded">
+                                LOCAL
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* API Settings */}
                       <div className="mb-3 px-2 space-y-1">
                         <div className="flex items-center justify-between text-[13px] font-medium text-white/90">
-                          <span>OpenAI API Settings</span>
+                          <span>AI Model Settings</span>
                           <button
                             className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-[11px]"
                             onClick={() => window.electronAPI.openSettingsPortal()}
