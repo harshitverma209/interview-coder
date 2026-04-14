@@ -51,9 +51,29 @@ const modelCategories: ModelCategory[] = [
     ],
     geminiModels: [
       {
-        id: "gemini-1.5-pro",
-        name: "Gemini 1.5 Pro",
-        description: "Best overall performance for problem extraction"
+        id: "gemma-4-31b-it",
+        name: "Gemma 4 31B",
+        description: "Dense Gemma 4 model via Gemini API"
+      },
+      {
+        id: "gemma-4-26b-a4b-it",
+        name: "Gemma 4 26B MoE",
+        description: "Mixture-of-experts Gemma 4 via Gemini API"
+      },
+      {
+        id: "gemini-3.1-pro-preview",
+        name: "Gemini 3.1 Pro (preview)",
+        description: "Latest flagship multimodal model (preview)"
+      },
+      {
+        id: "gemini-3-flash-preview",
+        name: "Gemini 3 Flash (preview)",
+        description: "Fast multimodal model (preview)"
+      },
+      {
+        id: "gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        description: "Strong reasoning and multimodal understanding"
       },
       {
         id: "gemini-2.5-flash",
@@ -61,9 +81,19 @@ const modelCategories: ModelCategory[] = [
         description: "Latest model with improved reasoning capabilities"
       },
       {
+        id: "gemini-2.5-flash-lite",
+        name: "Gemini 2.5 Flash-Lite",
+        description: "Faster, lower-cost 2.5 Flash variant"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
-        description: "Faster, more cost-effective option"
+        description: "Fast 2.x multimodal option"
+      },
+      {
+        id: "gemini-2.0-flash-lite",
+        name: "Gemini 2.0 Flash-Lite",
+        description: "Lightweight 2.x option"
       }
     ],
     anthropicModels: [
@@ -124,9 +154,29 @@ const modelCategories: ModelCategory[] = [
     ],
     geminiModels: [
       {
-        id: "gemini-1.5-pro",
-        name: "Gemini 1.5 Pro",
-        description: "Strong overall performance for coding tasks"
+        id: "gemma-4-31b-it",
+        name: "Gemma 4 31B",
+        description: "Dense Gemma 4 model via Gemini API"
+      },
+      {
+        id: "gemma-4-26b-a4b-it",
+        name: "Gemma 4 26B MoE",
+        description: "Mixture-of-experts Gemma 4 via Gemini API"
+      },
+      {
+        id: "gemini-3.1-pro-preview",
+        name: "Gemini 3.1 Pro (preview)",
+        description: "Latest flagship multimodal model (preview)"
+      },
+      {
+        id: "gemini-3-flash-preview",
+        name: "Gemini 3 Flash (preview)",
+        description: "Fast multimodal model (preview)"
+      },
+      {
+        id: "gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        description: "Strong reasoning and multimodal understanding"
       },
       {
         id: "gemini-2.5-flash",
@@ -134,9 +184,19 @@ const modelCategories: ModelCategory[] = [
         description: "Latest model with improved reasoning capabilities"
       },
       {
+        id: "gemini-2.5-flash-lite",
+        name: "Gemini 2.5 Flash-Lite",
+        description: "Faster, lower-cost 2.5 Flash variant"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
-        description: "Faster, more cost-effective option"
+        description: "Fast 2.x multimodal option"
+      },
+      {
+        id: "gemini-2.0-flash-lite",
+        name: "Gemini 2.0 Flash-Lite",
+        description: "Lightweight 2.x option"
       }
     ],
     anthropicModels: [
@@ -197,9 +257,29 @@ const modelCategories: ModelCategory[] = [
     ],
     geminiModels: [
       {
-        id: "gemini-1.5-pro",
-        name: "Gemini 1.5 Pro",
-        description: "Best for analyzing code and error messages"
+        id: "gemma-4-31b-it",
+        name: "Gemma 4 31B",
+        description: "Dense Gemma 4 model via Gemini API"
+      },
+      {
+        id: "gemma-4-26b-a4b-it",
+        name: "Gemma 4 26B MoE",
+        description: "Mixture-of-experts Gemma 4 via Gemini API"
+      },
+      {
+        id: "gemini-3.1-pro-preview",
+        name: "Gemini 3.1 Pro (preview)",
+        description: "Latest flagship multimodal model (preview)"
+      },
+      {
+        id: "gemini-3-flash-preview",
+        name: "Gemini 3 Flash (preview)",
+        description: "Fast multimodal model (preview)"
+      },
+      {
+        id: "gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        description: "Strong reasoning and multimodal understanding"
       },
       {
         id: "gemini-2.5-flash",
@@ -207,9 +287,19 @@ const modelCategories: ModelCategory[] = [
         description: "Latest model with improved reasoning capabilities"
       },
       {
+        id: "gemini-2.5-flash-lite",
+        name: "Gemini 2.5 Flash-Lite",
+        description: "Faster, lower-cost 2.5 Flash variant"
+      },
+      {
         id: "gemini-2.0-flash",
         name: "Gemini 2.0 Flash",
-        description: "Faster, more cost-effective option"
+        description: "Fast 2.x multimodal option"
+      },
+      {
+        id: "gemini-2.0-flash-lite",
+        name: "Gemini 2.0 Flash-Lite",
+        description: "Lightweight 2.x option"
       }
     ],
     anthropicModels: [
@@ -326,9 +416,9 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
       setSolutionModel("gpt-4o");
       setDebuggingModel("gpt-4o");
     } else if (provider === "gemini") {
-      setExtractionModel("gemini-1.5-pro");
-      setSolutionModel("gemini-1.5-pro");
-      setDebuggingModel("gemini-1.5-pro");
+      setExtractionModel("gemini-2.5-flash");
+      setSolutionModel("gemini-2.5-flash");
+      setDebuggingModel("gemini-2.5-flash");
     } else if (provider === "anthropic") {
       setExtractionModel("claude-3-7-sonnet-20250219");
       setSolutionModel("claude-3-7-sonnet-20250219");
@@ -444,7 +534,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                   />
                   <div className="flex flex-col">
                     <p className="font-medium text-white text-sm">Gemini</p>
-                    <p className="text-xs text-white/60">Gemini 2.5 models</p>
+                    <p className="text-xs text-white/60">Gemini and Gemma 4 models</p>
                   </div>
                 </div>
               </div>
